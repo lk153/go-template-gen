@@ -4,8 +4,8 @@ import (
 	"bytes"
 	"fmt"
 	"html/template"
-	"io/ioutil"
 	"log"
+	"os"
 
 	envpkg "github.com/lk153/go-template-gen/internal/env"
 )
@@ -29,7 +29,7 @@ func InitYamlProcessor(data envpkg.EnvVars) YamlProcessor {
 func (y YamlProcessor) Read(filename string) {
 	// Read config file into byte slice
 	var finalData bytes.Buffer
-	fileData, err := ioutil.ReadFile(filename)
+	fileData, err := os.ReadFile(filename)
 	if err != nil {
 		log.Fatalf("Failed to read file: %v", err)
 	}

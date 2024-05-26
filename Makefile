@@ -12,7 +12,7 @@ start:
 clean:
 	rm -rf ./out/main cpu.pprof mem.pprof
 build: clean
-	go mod tidy && go mod vendor && $(GOOGLE_WIRE) && $(GOSTATIC) -o out/main ./
+	go mod tidy && go work vendor && $(GOOGLE_WIRE) && $(GOSTATIC) -o out/main ./
 lint:
 	$(GOLINT) -v ./...
 test:

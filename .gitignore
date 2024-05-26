@@ -19,3 +19,6 @@
 
 # Go workspace file
 vendor
+
+#Testing folder
+temp

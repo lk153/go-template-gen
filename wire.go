@@ -4,9 +4,13 @@
 package main
 
 import (
-	"fmt"
+	"context"
 	"log"
+	"net/http"
 	"os"
+	"os/signal"
+	"syscall"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/wire"
@@ -16,9 +20,8 @@ import (
 	yamlpkg "github.com/lk153/go-template-gen/internal/yaml"
 )
 
-func InitializeRouter() (userspkg.Controller, error) {
-	wire.Build(userspkg.UserSet)
-	return userspkg.Controller{}, nil
+func InitializeRouter(r *gin.Engine) userspkg.Controller {
+	panic(wire.Build(userspkg.UserSet))
 }
 
 func InitEnv() (yamlpkg.YamlProcessor, error) {
@@ -29,14 +32,32 @@ func InitEnv() (yamlpkg.YamlProcessor, error) {
 func Startup() {
 	r := gin.Default()
 	InitEnv()
-	ctr, err := InitializeRouter()
-	if err != nil {
-		fmt.Println("SERVER ERROR:", err)
-		os.Exit(1)
+	InitializeRouter(r)
+	srv := &http.Server{
+		Addr:    ":8888",
+		Handler: r.Handler(),
 	}
 
-	r.GET("/users", ctr.GetUsers)
-	if err = r.Run(":8888"); err != nil {
-		log.Fatalf("impossible to start server: %s", err)
+	go func() {
+		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			log.Fatalf("Listen on: %s\n", err)
+		}
+	}()
+
+	quit := make(chan os.Signal, 1)
+	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+	<-quit
+	log.Println("Shutting down server ...")
+
+	ctx, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
+	defer cancel()
+	if err := srv.Shutdown(ctx); err != nil {
+		log.Fatal("Server shutdown with error:", err)
 	}
+
+	select {
+	case <-ctx.Done():
+		log.Println("Timeout!!!")
+	}
+	log.Println("Server exiting")
 }
